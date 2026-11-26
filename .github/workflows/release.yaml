@@ -108,6 +108,18 @@ jobs:
           git config user.name "${GITHUB_ACTOR}"
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
 
+      - name: Ensure gh-pages publishing branch exists
+        run: |
+          if git ls-remote --exit-code --heads origin gh-pages > /dev/null 2>&1; then
+            echo "gh-pages branch already exists"
+          else
+            tree=$(git mktree < /dev/null)
+            commit=$(git commit-tree "$tree" -m "chore: initialize gh-pages publishing branch")
+            git push origin "$commit:refs/heads/gh-pages"
+            git fetch origin gh-pages:refs/remotes/origin/gh-pages
+            echo "gh-pages branch created"
+          fi
+
       - name: Set chart version and appVersion from the git tag
         run: |
           version="${{ needs.validate.outputs.version }}"
@@ -118,5 +130,6 @@ jobs:
         with:
           charts_dir: deploy
           charts: ${{ env.CHART_DIR }}
+          skip_existing: "true"
         env:
           CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
