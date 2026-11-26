@@ -103,10 +103,60 @@ Secrets in its own namespace only. If Issuers live in other namespaces and
 
 ### 3. Reference the solver in an Issuer
 
-The webhook is now deployed. The `webhook` stanza of the Issuer must reference
-the `groupName` configured above and the solver name `nameshield`. The Issuer
-manifest itself is intentionally not provided here for now; it will be
-documented when the issuer strategy is defined.
+The webhook is now deployed. Create a `ClusterIssuer` (or `Issuer`) whose
+`dns01` stanza uses the `webhook` solver with the `groupName` configured above
+and the solver name `nameshield`:
+
+```yaml
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-nameshield
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: admin@example.com
+    privateKeySecretRef:
+      name: letsencrypt-account-key
+    solvers:
+      - dns01:
+          webhook:
+            groupName: cert-manager-webhook-nameshield
+            solverName: nameshield
+            config:
+              apiTokenSecretRef:
+                name: nameshield-api-token
+                key: token
+              # namespace: cert-manager  # rarely needed, see below
+              # zoneName: example.com    # optional: force the Nameshield zone
+              # apiUrl: https://ote-api.nameshield.net/dns/v4  # OTE environment
+              # ttl: 60                  # optional TXT record TTL
+```
+
+The `config` stanza accepts the fields documented in
+[Solver configuration](#solver-configuration). For a `ClusterIssuer`,
+cert-manager resolves `apiTokenSecretRef` in its own cluster resource
+namespace (`cert-manager` by default), so `namespace` can usually be omitted
+and the Secret created in section 2 is found as-is. Set `namespace` explicitly
+when it differs, or set `rbac.allowClusterWideSecretAccess=true` on the chart.
+
+Then request a certificate:
+
+```yaml
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: example-com
+  namespace: default
+spec:
+  secretName: example-com-tls
+  dnsNames:
+    - example.com
+    - www.example.com
+  issuerRef:
+    name: letsencrypt-nameshield
+    kind: ClusterIssuer
+```
 
 ### Building the image from source
 
