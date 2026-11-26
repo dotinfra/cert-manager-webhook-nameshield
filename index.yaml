@@ -1,0 +1,13 @@
+apiVersion: v1
+entries:
+  cert-manager-webhook-nameshield:
+  - apiVersion: v2
+    appVersion: 0.1.2
+    created: "2026-11-26T20:34:39.304445912Z"
+    description: A Helm chart for the Nameshield cert-manager ACME DNS01 webhook
+    digest: 17620c0c9bc99251255a76decbe668fb2f620b7298e1f8246f05a09c8fbe378d
+    name: cert-manager-webhook-nameshield
+    urls:
+    - https://github.com/dotinfra/cert-manager-webhook-nameshield/releases/download/cert-manager-webhook-nameshield-0.1.2/cert-manager-webhook-nameshield-0.1.2.tgz
+    version: 0.1.2
+generated: "2026-11-26T20:34:39.304451483Z"
