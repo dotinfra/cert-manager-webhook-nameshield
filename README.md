@@ -241,8 +241,9 @@ ships with an app release anyway.
 - **GitHub Pages**: in *Settings → Pages*, set *Build and deployment* to
   *Deploy from a branch*, then select the `gh-pages` branch with the `/ (root)`
   folder. The chart repository is then served at
-  `https://dotinfra.github.io/cert-manager-webhook-nameshield/index.yaml`
-  (the `gh-pages` branch is created automatically by the first chart release).
+  `https://dotinfra.github.io/cert-manager-webhook-nameshield/index.yaml`.
+  The `gh-pages` branch itself is created automatically (as an empty orphan
+  branch) by the release workflow on the first chart publication.
 - **GHCR package**: the first image push creates the
   `cert-manager-webhook-nameshield` package under the repository owner. Link
   it to this repository (*Packages → package settings → Connect repository*)
