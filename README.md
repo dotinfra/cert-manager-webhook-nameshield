@@ -182,11 +182,14 @@ Two GitHub Actions workflows are defined in `.github/workflows/`:
   - validates that the tag is a semantic version `vX.Y.Z` (prerelease suffix
     allowed);
   - creates a GitHub release on the tag itself (`vX.Y.Z`) with
-    [softprops/action-gh-release](https://github.com/softprops/action-gh-release)
-    (automatically generated release notes, flagged as prerelease when the tag
-    has a prerelease suffix); the chart publication below additionally creates
-    a per-chart release named `cert-manager-webhook-nameshield-<version>`
-    carrying the `.tgz` asset;
+    [softprops/action-gh-release](https://github.com/softprops/action-gh-release):
+    automatically generated release notes, links to the published artifacts
+    (GHCR image `ghcr.io/dotinfra/cert-manager-webhook-nameshield:<version>`,
+    Helm chart repository and chart release), flagged as prerelease when the
+    tag has a prerelease suffix. The chart publication below additionally
+    creates a per-chart release named `cert-manager-webhook-nameshield-<version>`
+    carrying the `.tgz` asset. The workflow can also be re-run manually
+    (`workflow_dispatch`) on a tag, e.g. to retry a failed publication;
   - builds the image for `linux/amd64` and `linux/arm64` and pushes it to GHCR
     as `ghcr.io/dotinfra/cert-manager-webhook-nameshield` with the semver tags
     `<version>`, `<major>.<minor>`, `<major>` derived from the tag, plus
@@ -214,7 +217,8 @@ git push origin vX.Y.Z
 The `release.yaml` workflow then:
 
 1. validates the tag (`vX.Y.Z`, optional prerelease suffix);
-2. creates a GitHub release on the `vX.Y.Z` tag with generated release notes;
+2. creates a GitHub release on the `vX.Y.Z` tag with generated release notes
+   and links to the image and chart artifacts;
 3. sets the chart `version` and `appVersion` to `X.Y.Z` and publishes the
    chart to GitHub Pages (`https://dotinfra.github.io/cert-manager-webhook-nameshield`);
 4. builds the image and pushes it to GHCR with the tags `X.Y.Z`, `X.Y`, `X`,

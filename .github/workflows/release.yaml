@@ -3,6 +3,7 @@ name: Release
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -44,6 +45,13 @@ jobs:
           generate_release_notes: true
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
+          body: |
+            ## Artifacts
+
+            - **Container image**: `ghcr.io/${{ github.repository }}:${{ needs.validate.outputs.version }}` — [GHCR package](https://github.com/${{ github.repository }}/pkgs/container/${{ github.event.repository.name }})
+            - **Helm chart**: `https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}` — [chart release `cert-manager-webhook-nameshield-${{ needs.validate.outputs.version }}`](https://github.com/${{ github.repository }}/releases/tag/cert-manager-webhook-nameshield-${{ needs.validate.outputs.version }})
+
+            Chart `version`/`appVersion` and default `image.tag` for this release: `${{ needs.validate.outputs.version }}`.
 
   docker:
     name: Build and push image to GHCR
@@ -95,6 +103,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Configure git
+        run: |
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+
       - name: Set chart version and appVersion from the git tag
         run: |
           version="${{ needs.validate.outputs.version }}"
@@ -105,3 +118,5 @@ jobs:
         with:
           charts_dir: deploy
           charts: ${{ env.CHART_DIR }}
+        env:
+          CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
