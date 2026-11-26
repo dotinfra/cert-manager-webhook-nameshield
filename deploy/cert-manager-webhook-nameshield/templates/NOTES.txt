@@ -1,0 +1,16 @@
+NOTES:
+1. Make sure the Nameshield API token Secret exists before issuing
+   certificates. In the challenge namespace (the cert-manager namespace for
+   ClusterIssuers):
+
+     kubectl -n cert-manager create secret generic nameshield-api-token \
+       --from-literal=token=<TOKEN>
+
+2. Reference the webhook in an Issuer or ClusterIssuer with the groupName
+   configured by this chart ({{ .Values.groupName }}) and the solverName
+   "nameshield". See the README for the solver configuration reference.
+
+3. The APIService "v1alpha1.{{ .Values.groupName }}" and its backing service
+   should become available shortly:
+
+     kubectl get apiservice v1alpha1.{{ .Values.groupName }}

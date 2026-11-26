@@ -1,0 +1,6 @@
+# Patterns to exclude when packaging the chart
+.git
+.gitignore
+CI
+*.swp
+*.tgz

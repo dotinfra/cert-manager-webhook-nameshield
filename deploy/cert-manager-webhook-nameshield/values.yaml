@@ -1,0 +1,44 @@
+# The groupName names the Kubernetes APIService group under which the webhook
+# solver is served. It is referenced:
+#   - in the APIService resource created by this chart,
+#   - in the `groupName` field of each Issuer's webhook stanza.
+# It must be unique in the cluster and stable once deployed.
+groupName: cert-manager-webhook-nameshield
+
+certManager:
+  namespace: cert-manager
+  serviceAccountName: cert-manager
+
+image:
+  repository: your-registry/cert-manager-webhook-nameshield
+  tag: latest
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+replicaCount: 1
+
+service:
+  type: ClusterIP
+  port: 443
+
+# By default the webhook can only read Secrets in its own namespace. Set
+# allowClusterWideSecretAccess to true when issuers live in other namespaces
+# and apiTokenSecretRef does not carry an explicit namespace.
+rbac:
+  allowClusterWideSecretAccess: false
+
+resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
