@@ -41,13 +41,41 @@ The webhook solver configuration, set in the Issuer's `webhook.config` stanza:
 | `ttl` | int | Optional. TTL of created TXT records. Provider default when unset. |
 | `includeOtherUsersChanges` | bool | Optional, default false. Set to true to also apply pending zone changes made by other users when validating. |
 
-## Build and installation
+## Installation
 
-### 1. Build and push the container image
+Pre-built artifacts are published automatically by the CI (see
+[CI and releases](#ci-and-releases)):
+
+- container image on GitHub Container Registry:
+  `ghcr.io/dotinfra/cert-manager-webhook-nameshield` (tags `<version>`,
+  `<major>.<minor>`, `<major>`, `latest` and `sha-<short-sha>`);
+- Helm chart repository on GitHub Pages:
+  `https://dotinfra.github.io/cert-manager-webhook-nameshield`.
+
+### 1. Install the Helm chart
 
 ```sh
-make build-image IMAGE=registry.example.com/infra/cert-manager-webhook-nameshield TAG=v0.1.0
-make push-image  IMAGE=registry.example.com/infra/cert-manager-webhook-nameshield TAG=v0.1.0
+helm repo add cert-manager-webhook-nameshield https://dotinfra.github.io/cert-manager-webhook-nameshield
+helm repo update
+
+helm install cert-manager-webhook-nameshield cert-manager-webhook-nameshield/cert-manager-webhook-nameshield \
+  --namespace cert-manager \
+  --create-namespace \
+  --set groupName=cert-manager-webhook-nameshield \
+  --set image.repository=ghcr.io/dotinfra/cert-manager-webhook-nameshield \
+  --set image.tag=<version>
+```
+
+`image.tag` is optional (the chart defaults to `latest`); pin it to a release
+version, e.g. `0.1.0` without the leading `v`. To install from a local
+checkout instead:
+
+```sh
+helm install cert-manager-webhook-nameshield deploy/cert-manager-webhook-nameshield \
+  --namespace cert-manager \
+  --set groupName=cert-manager-webhook-nameshield \
+  --set image.repository=<your-registry>/cert-manager-webhook-nameshield \
+  --set image.tag=<tag>
 ```
 
 ### 2. Create the API token Secret
@@ -61,16 +89,6 @@ kubectl -n cert-manager create secret generic nameshield-api-token \
   --from-literal=token=<NAMESHIELD_TOKEN>
 ```
 
-### 3. Install the Helm chart
-
-```sh
-helm install cert-manager-webhook-nameshield deploy/cert-manager-webhook-nameshield \
-  --namespace cert-manager \
-  --set groupName=cert-manager-webhook-nameshield \
-  --set image.repository=registry.example.com/infra/cert-manager-webhook-nameshield \
-  --set image.tag=v0.1.0
-```
-
 The `groupName` value names the Kubernetes APIService group of the webhook.
 Here it is set to `cert-manager-webhook-nameshield`; it must be unique in the
 cluster and stable once deployed.
@@ -80,12 +98,74 @@ Secrets in its own namespace only. If Issuers live in other namespaces and
 `apiTokenSecretRef` does not specify a namespace, set
 `rbac.allowClusterWideSecretAccess=true`.
 
-### 4. Reference the solver in an Issuer
+### 3. Reference the solver in an Issuer
 
 The webhook is now deployed. The `webhook` stanza of the Issuer must reference
 the `groupName` configured above and the solver name `nameshield`. The Issuer
 manifest itself is intentionally not provided here for now; it will be
 documented when the issuer strategy is defined.
+
+### Building the image from source
+
+```sh
+make build-image IMAGE=ghcr.io/dotinfra/cert-manager-webhook-nameshield TAG=v0.1.0
+make push-image  IMAGE=ghcr.io/dotinfra/cert-manager-webhook-nameshield TAG=v0.1.0
+```
+
+then install the chart from the local checkout as shown above.
+
+## CI and releases
+
+Two GitHub Actions workflows are defined in `.github/workflows/`:
+
+- **`ci.yaml`** — runs on every push and pull request on `main`:
+  - `gofmt` check, `go vet ./...` and unit tests (`go test ./...`; the
+    cert-manager DNS01 conformance suite is skipped unless `NAMESHIELD_ZONE`
+    and `NAMESHIELD_TOKEN` are set);
+  - `helm lint` and `helm template` on `deploy/cert-manager-webhook-nameshield`;
+  - a Docker image build (load only, no push) to validate the `Dockerfile`.
+- **`release.yaml`**:
+  - on push of a `v*` tag, builds the image for `linux/amd64` and
+    `linux/arm64` and pushes it to GHCR as
+    `ghcr.io/dotinfra/cert-manager-webhook-nameshield` with the tags
+    `<version>`, `<major>.<minor>`, `<major>` (semver derived from the tag),
+    `latest` and `sha-<short-sha>`;
+  - on push to `main` and on `v*` tags, packages the Helm chart with
+    [helm/chart-releaser-action](https://github.com/helm/chart-releaser-action)
+    and publishes it to the `gh-pages` branch (served by GitHub Pages): one
+    GitHub release per chart version, and `index.yaml` regenerated on every
+    chart change.
+
+Both workflows rely on the default `GITHUB_TOKEN` only — no extra secrets are
+required (`packages: write` for GHCR, `contents: write` for the chart
+releases and the `gh-pages` branch).
+
+### Cutting a release
+
+1. Bump `version` and `appVersion` in
+   `deploy/cert-manager-webhook-nameshield/Chart.yaml` to the new version
+   `X.Y.Z` and merge on `main`.
+2. Tag and push the release:
+
+   ```sh
+   git tag vX.Y.Z
+   git push origin main vX.Y.Z
+   ```
+
+3. The `release.yaml` workflow builds and pushes the Docker image and
+   publishes the Helm chart.
+
+### One-time repository setup
+
+- **GitHub Pages**: in *Settings → Pages*, set *Build and deployment* to
+  *Deploy from a branch*, then select the `gh-pages` branch with the `/ (root)`
+  folder. The chart repository is then served at
+  `https://dotinfra.github.io/cert-manager-webhook-nameshield/index.yaml`
+  (the `gh-pages` branch is created automatically by the first chart release).
+- **GHCR package**: the first image push creates the
+  `cert-manager-webhook-nameshield` package under the repository owner. Link
+  it to this repository (*Packages → package settings → Connect repository*)
+  so that it inherits the repository visibility.
 
 ## Test
 
@@ -109,6 +189,7 @@ All DNS webhooks deployed publicly are expected to run and pass this suite.
 ## Project layout
 
 ```
+.github/workflows/           CI (tests, lint, image build) and release (GHCR image, Helm chart)
 main.go                      Entrypoint, registers the solver
 nameshield/solver.go         webhook.Solver: Present / CleanUp / Initialize
 nameshield/client.go         Nameshield DNS API v4 client (records, validation)
