@@ -2,7 +2,6 @@ name: Release
 
 on:
   push:
-    branches: [main]
     tags: ['v*']
 
 permissions:
@@ -13,10 +12,29 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  CHART_DIR: deploy/cert-manager-webhook-nameshield
+  IMAGE: ghcr.io/${{ github.repository }}
+
 jobs:
+  validate:
+    name: Validate semver tag
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - id: version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Tag '${GITHUB_REF_NAME}' is not a valid semantic version (expected vX.Y.Z, optionally with a prerelease suffix)."
+            exit 1
+          fi
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+
   docker:
     name: Build and push image to GHCR
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: validate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
@@ -36,12 +54,12 @@ jobs:
       - id: meta
         uses: docker/metadata-action@v6.2.0
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: ${{ env.IMAGE }}
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-            type=raw,value=latest
+            type=raw,value=latest,enable=${{ !contains(github.ref_name, '-') }}
             type=sha,format=short
 
       - uses: docker/build-push-action@v7.4.0
@@ -57,13 +75,20 @@ jobs:
 
   helm-chart:
     name: Publish Helm chart
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    needs: validate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
 
+      - name: Set chart version and appVersion from the git tag
+        run: |
+          version="${{ needs.validate.outputs.version }}"
+          sed -i -E "s/^version:.*/version: ${version}/; s/^appVersion:.*/appVersion: \"${version}\"/" "${CHART_DIR}/Chart.yaml"
+          grep -E '^(version|appVersion):' "${CHART_DIR}/Chart.yaml"
+
       - uses: helm/chart-releaser-action@v1.9.0
         with:
           charts_dir: deploy
+          charts: ${{ env.CHART_DIR }}

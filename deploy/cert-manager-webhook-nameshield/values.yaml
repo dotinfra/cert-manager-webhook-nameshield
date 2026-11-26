@@ -11,7 +11,7 @@ certManager:
 
 image:
   repository: ghcr.io/dotinfra/cert-manager-webhook-nameshield
-  tag: latest
+  tag: ""
   pullPolicy: IfNotPresent
 
 nameOverride: ""

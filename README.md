@@ -48,7 +48,9 @@ Pre-built artifacts are published automatically by the CI (see
 
 - container image on GitHub Container Registry:
   `ghcr.io/dotinfra/cert-manager-webhook-nameshield` (tags `<version>`,
-  `<major>.<minor>`, `<major>`, `latest` and `sha-<short-sha>`);
+  `<major>.<minor>`, `<major>`, `latest` on stable releases, and
+  `sha-<short-sha>` — `<version>` is the release semver `X.Y.Z`, i.e. the same
+  value as the chart `version`/`appVersion` of that release);
 - Helm chart repository on GitHub Pages:
   `https://dotinfra.github.io/cert-manager-webhook-nameshield`.
 
@@ -65,9 +67,11 @@ helm install cert-manager-webhook-nameshield cert-manager-webhook-nameshield/cer
 ```
 
 The chart defaults to the published image
-`ghcr.io/dotinfra/cert-manager-webhook-nameshield:latest`. To pin a release,
-add `--set image.tag=<version>` (e.g. `0.1.0`, without the leading `v`). To
-install from a local checkout with a self-built image instead:
+`ghcr.io/dotinfra/cert-manager-webhook-nameshield:<appVersion>`: the chart's
+`image.tag` defaults to `.Chart.AppVersion`, so a released chart always points
+at the Docker tag published for the same release (`X.Y.Z`). Override it with
+`--set image.tag=<tag>`. To install from a local checkout with a self-built
+image instead:
 
 ```sh
 helm install cert-manager-webhook-nameshield deploy/cert-manager-webhook-nameshield \
@@ -107,8 +111,8 @@ documented when the issuer strategy is defined.
 ### Building the image from source
 
 ```sh
-make build-image IMAGE=ghcr.io/dotinfra/cert-manager-webhook-nameshield TAG=v0.1.0
-make push-image  IMAGE=ghcr.io/dotinfra/cert-manager-webhook-nameshield TAG=v0.1.0
+make build-image IMAGE=ghcr.io/dotinfra/cert-manager-webhook-nameshield TAG=0.1.0
+make push-image  IMAGE=ghcr.io/dotinfra/cert-manager-webhook-nameshield TAG=0.1.0
 ```
 
 then install the chart from the local checkout as shown above.
@@ -124,17 +128,19 @@ Two GitHub Actions workflows are defined in `.github/workflows/`:
     runs via `make test`);
   - `helm lint` and `helm template` on `deploy/cert-manager-webhook-nameshield`;
   - a Docker image build (load only, no push) to validate the `Dockerfile`.
-- **`release.yaml`**:
-  - on push of a `v*` tag, builds the image for `linux/amd64` and
-    `linux/arm64` and pushes it to GHCR as
-    `ghcr.io/dotinfra/cert-manager-webhook-nameshield` with the tags
-    `<version>`, `<major>.<minor>`, `<major>` (semver derived from the tag),
-    `latest` and `sha-<short-sha>`;
-  - on push to `main` and on `v*` tags, packages the Helm chart with
+- **`release.yaml`** — runs on push of a `v*` tag only:
+  - validates that the tag is a semantic version `vX.Y.Z` (prerelease suffix
+    allowed);
+  - builds the image for `linux/amd64` and `linux/arm64` and pushes it to GHCR
+    as `ghcr.io/dotinfra/cert-manager-webhook-nameshield` with the semver tags
+    `<version>`, `<major>.<minor>`, `<major>` derived from the tag, plus
+    `latest` (stable releases only) and `sha-<short-sha>`;
+  - sets the chart's `version` and `appVersion` to the tag version `<version>`,
+    then packages the chart with
     [helm/chart-releaser-action](https://github.com/helm/chart-releaser-action)
     and publishes it to the `gh-pages` branch (served by GitHub Pages): one
     GitHub release per chart version, and `index.yaml` regenerated on every
-    chart change.
+    release.
 
 Both workflows rely on the default `GITHUB_TOKEN` only — no extra secrets are
 required (`packages: write` for GHCR, `contents: write` for the chart
@@ -142,18 +148,32 @@ releases and the `gh-pages` branch).
 
 ### Cutting a release
 
-1. Bump `version` and `appVersion` in
-   `deploy/cert-manager-webhook-nameshield/Chart.yaml` to the new version
-   `X.Y.Z` and merge on `main`.
-2. Tag and push the release:
+Tag the repository with a semantic version and push the tag:
 
-   ```sh
-   git tag vX.Y.Z
-   git push origin main vX.Y.Z
-   ```
+```sh
+git tag vX.Y.Z
+git push origin vX.Y.Z
+```
 
-3. The `release.yaml` workflow builds and pushes the Docker image and
-   publishes the Helm chart.
+The `release.yaml` workflow then:
+
+1. validates the tag (`vX.Y.Z`, optional prerelease suffix);
+2. sets the chart `version` and `appVersion` to `X.Y.Z` and publishes the
+   chart to GitHub Pages (`https://dotinfra.github.io/cert-manager-webhook-nameshield`);
+3. builds the image and pushes it to GHCR with the tags `X.Y.Z`, `X.Y`, `X`,
+   `latest` (stable releases only) and `sha-<short-sha>`.
+
+Everything is aligned on the same release version: the Docker tag `X.Y.Z`, the
+chart `version`/`appVersion` `X.Y.Z`, and the chart's default `image.tag`
+(which equals `appVersion`, i.e. `X.Y.Z`).
+
+### Chart `version` vs `appVersion`
+
+The chart and the webhook image are released together in a 1:1 relationship,
+so `version` and `appVersion` are kept equal: both are set to the release
+version `X.Y.Z` taken from the git tag. Helm allows them to differ, but for a
+single-application chart like this one there is no benefit — every chart change
+ships with an app release anyway.
 
 ### One-time repository setup
 
