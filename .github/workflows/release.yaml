@@ -32,6 +32,19 @@ jobs:
           fi
           echo "version=${version}" >> "${GITHUB_OUTPUT}"
 
+  github-release:
+    name: Create GitHub release on the tag
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: softprops/action-gh-release@v3.0.4
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+
   docker:
     name: Build and push image to GHCR
     needs: validate
