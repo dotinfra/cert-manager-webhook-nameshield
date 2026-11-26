@@ -119,9 +119,10 @@ then install the chart from the local checkout as shown above.
 Two GitHub Actions workflows are defined in `.github/workflows/`:
 
 - **`ci.yaml`** — runs on every push and pull request on `main`:
-  - `gofmt` check, `go vet ./...` and unit tests (`go test ./...`; the
-    cert-manager DNS01 conformance suite is skipped unless `NAMESHIELD_ZONE`
-    and `NAMESHIELD_TOKEN` are set);
+  - `gofmt` check, `go vet ./...` and unit tests (`go test ./nameshield/...`;
+    the cert-manager DNS01 conformance suite in the root package needs the
+    envtest binaries plus real `NAMESHIELD_ZONE`/`NAMESHIELD_TOKEN`, so it only
+    runs via `make test`);
   - `helm lint` and `helm template` on `deploy/cert-manager-webhook-nameshield`;
   - a Docker image build (load only, no push) to validate the `Dockerfile`.
 - **`release.yaml`**:
