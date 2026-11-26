@@ -47,7 +47,6 @@ jobs:
       - name: Render chart
         run: |
           helm template cert-manager-webhook-nameshield deploy/cert-manager-webhook-nameshield \
-            --set image.repository=ghcr.io/${{ github.repository }} \
             --set image.tag=ci-${{ github.sha }} \
             --set image.pullPolicy=Always
 

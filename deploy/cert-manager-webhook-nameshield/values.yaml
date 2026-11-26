@@ -10,7 +10,7 @@ certManager:
   serviceAccountName: cert-manager
 
 image:
-  repository: your-registry/cert-manager-webhook-nameshield
+  repository: ghcr.io/dotinfra/cert-manager-webhook-nameshield
   tag: latest
   pullPolicy: IfNotPresent
 

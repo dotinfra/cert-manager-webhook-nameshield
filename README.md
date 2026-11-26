@@ -61,14 +61,13 @@ helm repo update
 helm install cert-manager-webhook-nameshield cert-manager-webhook-nameshield/cert-manager-webhook-nameshield \
   --namespace cert-manager \
   --create-namespace \
-  --set groupName=cert-manager-webhook-nameshield \
-  --set image.repository=ghcr.io/dotinfra/cert-manager-webhook-nameshield \
-  --set image.tag=<version>
+  --set groupName=cert-manager-webhook-nameshield
 ```
 
-`image.tag` is optional (the chart defaults to `latest`); pin it to a release
-version, e.g. `0.1.0` without the leading `v`. To install from a local
-checkout instead:
+The chart defaults to the published image
+`ghcr.io/dotinfra/cert-manager-webhook-nameshield:latest`. To pin a release,
+add `--set image.tag=<version>` (e.g. `0.1.0`, without the leading `v`). To
+install from a local checkout with a self-built image instead:
 
 ```sh
 helm install cert-manager-webhook-nameshield deploy/cert-manager-webhook-nameshield \
