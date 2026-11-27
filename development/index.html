@@ -133,14 +133,14 @@ chart repository (<code>index.yaml</code>) is preserved at the same root.</p>
   image build (load only, no push).</li>
 <li><strong><code>docs.yaml</code></strong> — builds the MkDocs site and publishes it to the root of
   <code>gh-pages</code>, as the Pages home page (see above).</li>
-<li><strong><code>release.yaml</code></strong> — runs on push of a <code>v*</code> tag only: validates the semver tag,
-  creates a GitHub release on the tag, builds and pushes the multi-arch image to
-  GHCR (<code>&lt;version&gt;</code>, <code>&lt;major&gt;.&lt;minor&gt;</code>, <code>&lt;major&gt;</code>, <code>latest</code> on stable releases,
-  <code>sha-&lt;short-sha&gt;</code>), sets the chart <code>version</code>/<code>appVersion</code> to the tag version
-  and publishes the chart to the <code>gh-pages</code> branch with
-  <a href="https://github.com/helm/chart-releaser-action">helm/chart-releaser-action</a>
-  (<code>index.yaml</code> at the branch root, one GitHub release per chart version carrying
-  the <code>.tgz</code> asset).</li>
+<li><strong><code>release.yaml</code></strong> — runs on push of a <code>v*</code> tag only (one tag = one release, no
+  extra chart tags/releases): validates the semver tag, builds and pushes the
+  multi-arch image to GHCR (<code>&lt;version&gt;</code>, <code>&lt;major&gt;.&lt;minor&gt;</code>, <code>&lt;major&gt;</code>, <code>latest</code>
+  on stable releases, <code>sha-&lt;short-sha&gt;</code>), sets the chart <code>version</code>/<code>appVersion</code>
+  to the tag version, packages it with <code>helm package</code>, creates the single GitHub
+  release on the tag with the <code>.tgz</code> attached, and publishes the <code>.tgz</code> +
+  regenerated <code>index.yaml</code> to the <code>gh-pages</code> branch (chart repository at the root
+  of the Pages site, next to the documentation).</li>
 </ul>
 <p>All workflows rely on the default <code>GITHUB_TOKEN</code> only — no extra secrets are
 required.</p>
@@ -157,7 +157,7 @@ select the <code>gh-pages</code> branch with the <code>/ (root)</code> folder. T
 from the same branch:</p>
 <ul>
 <li>the documentation at the root, <code>https://dotinfra.github.io/cert-manager-webhook-nameshield/</code> (home page);</li>
-<li>the Helm chart repository at <code>https://dotinfra.github.io/cert-manager-webhook-nameshield/index.yaml</code>.</li>
+<li>the Helm chart repository at <code>https://dotinfra.github.io/cert-manager-webhook-nameshield/index.yaml</code> (<code>.tgz</code> archives at the root).</li>
 </ul>
 <p>The <code>gh-pages</code> branch itself is created automatically (as an empty orphan
 branch) by the release workflow on the first chart publication.</p>
