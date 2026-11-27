@@ -1,0 +1,123 @@
+name: Docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - '.github/workflows/docs.yaml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - '.github/workflows/docs.yaml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build documentation site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - uses: actions/setup-python@v6.0.0
+        with:
+          python-version: '3.13'
+
+      - name: Install MkDocs
+        run: pip install 'mkdocs==1.6.1'
+
+      - name: Build site
+        run: mkdocs build --site-dir site
+
+  publish:
+    name: Publish docs to the gh-pages branch
+    needs: build
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6.0.0
+        with:
+          python-version: '3.13'
+
+      - name: Install MkDocs
+        run: pip install 'mkdocs==1.6.1'
+
+      - name: Build site
+        run: mkdocs build --site-dir site
+
+      - name: Configure git
+        run: |
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+
+      - name: Ensure gh-pages publishing branch exists
+        run: |
+          if git ls-remote --exit-code --heads origin gh-pages > /dev/null 2>&1; then
+            echo "gh-pages branch already exists"
+          else
+            tree=$(git mktree < /dev/null)
+            commit=$(git commit-tree "$tree" -m "chore: initialize gh-pages publishing branch")
+            git push origin "$commit:refs/heads/gh-pages"
+            echo "gh-pages branch created"
+          fi
+
+      - name: Publish docs alongside the Helm chart
+        run: |
+          git fetch origin gh-pages
+          git worktree add --detach .gh-pages FETCH_HEAD
+          cd .gh-pages
+          # Keep the chart repository files (index.yaml, releases) untouched:
+          # only the docs/ folder and the landing page are managed here.
+          rm -rf docs
+          cp -r ../site docs
+          touch .nojekyll
+          cat > index.html <<'EOF'
+          <!doctype html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>cert-manager-webhook-nameshield</title>
+            <style>
+              body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; max-width: 44rem; margin: 3rem auto; padding: 0 1rem; line-height: 1.5; color: #24292f; }
+              code { background: #f6f8fa; padding: 0.15rem 0.35rem; border-radius: 4px; }
+            </style>
+          </head>
+          <body>
+            <h1>cert-manager-webhook-nameshield</h1>
+            <p>A cert-manager ACME DNS-01 solver webhook for the Nameshield DNS API.</p>
+            <ul>
+              <li><a href="docs/">Documentation</a></li>
+              <li>Helm chart repository: <code>helm repo add cert-manager-webhook-nameshield https://dotinfra.github.io/cert-manager-webhook-nameshield</code> (<a href="index.yaml">index.yaml</a>)</li>
+              <li><a href="https://github.com/dotinfra/cert-manager-webhook-nameshield">Source repository</a></li>
+            </ul>
+          </body>
+          </html>
+          EOF
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Documentation already up to date on gh-pages"
+          else
+            git commit -m "docs: publish documentation site"
+            git push origin HEAD:refs/heads/gh-pages || {
+              git fetch origin gh-pages
+              git rebase origin/gh-pages
+              git push origin HEAD:refs/heads/gh-pages
+            }
+          fi

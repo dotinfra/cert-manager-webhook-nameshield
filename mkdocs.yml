@@ -1,0 +1,12 @@
+site_name: cert-manager-webhook-nameshield
+site_description: cert-manager ACME DNS-01 solver webhook for the Nameshield DNS API
+site_url: https://dotinfra.github.io/cert-manager-webhook-nameshield/docs/
+repo_url: https://github.com/dotinfra/cert-manager-webhook-nameshield
+docs_dir: docs
+theme:
+  name: readthedocs
+nav:
+  - Overview: index.md
+  - Installation: installation.md
+  - Configuration: configuration.md
+  - Development: development.md
