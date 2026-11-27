@@ -177,8 +177,8 @@ Three GitHub Actions workflows are defined in `.github/workflows/`:
 - **`docs.yaml`** — builds the MkDocs site from `docs/` (`mkdocs.yml`) on every
   push/PR touching `docs/`, `mkdocs.yml` or the workflow itself, and publishes it
   on `main` to the root of the `gh-pages` branch, so it is the Pages home page,
-  alongside the Helm chart repository (`index.yaml`) served from the same root
-  (`https://dotinfra.github.io/cert-manager-webhook-nameshield/`);
+  alongside the Helm chart repository (`index.yaml` and `*.tgz`) served from
+  the same root (`https://dotinfra.github.io/cert-manager-webhook-nameshield/`);
 - **`ci.yaml`** — runs on every push and pull request on `main`:
   - `gofmt` check, `go vet ./...` and unit tests (`go test ./nameshield/...`;
     the cert-manager DNS01 conformance suite in the root package needs the
@@ -186,32 +186,29 @@ Three GitHub Actions workflows are defined in `.github/workflows/`:
     runs via `make test`);
   - `helm lint` and `helm template` on `deploy/cert-manager-webhook-nameshield`;
   - a Docker image build (load only, no push) to validate the `Dockerfile`.
-- **`release.yaml`** — runs on push of a `v*` tag only:
+- **`release.yaml`** — runs on push of a `v*` tag only (one tag = one release,
+  no extra chart tags or releases):
   - validates that the tag is a semantic version `vX.Y.Z` (prerelease suffix
     allowed);
-  - creates a GitHub release on the tag itself (`vX.Y.Z`) with
-    [softprops/action-gh-release](https://github.com/softprops/action-gh-release):
-    automatically generated release notes, links to the published artifacts
-    (GHCR image `ghcr.io/dotinfra/cert-manager-webhook-nameshield:<version>`,
-    Helm chart repository and chart release), flagged as prerelease when the
-    tag has a prerelease suffix. The chart publication below additionally
-    creates a per-chart release named `cert-manager-webhook-nameshield-<version>`
-    carrying the `.tgz` asset. The workflow can also be re-run manually
-    (`workflow_dispatch`) on a tag, e.g. to retry a failed publication;
   - builds the image for `linux/amd64` and `linux/arm64` and pushes it to GHCR
     as `ghcr.io/dotinfra/cert-manager-webhook-nameshield` with the semver tags
     `<version>`, `<major>.<minor>`, `<major>` derived from the tag, plus
     `latest` (stable releases only) and `sha-<short-sha>`;
-  - sets the chart's `version` and `appVersion` to the tag version `<version>`,
-    then packages the chart with
-    [helm/chart-releaser-action](https://github.com/helm/chart-releaser-action)
-    and publishes it to the `gh-pages` branch (served by GitHub Pages): one
-    GitHub release per chart version, and `index.yaml` regenerated on every
-    release.
+  - sets the chart's `version` and `appVersion` to the tag version `<version>`
+    and packages it with `helm package`, then:
+    - creates the single GitHub release on the tag (`vX.Y.Z`) with
+      [softprops/action-gh-release](https://github.com/softprops/action-gh-release):
+      generated release notes, links to the GHCR image and the Pages chart
+      repository, the `.tgz` attached as an asset, flagged as prerelease when
+      the tag has a prerelease suffix;
+    - publishes the `.tgz` and a regenerated `index.yaml` to the `gh-pages`
+      branch (served by GitHub Pages), alongside the documentation site.
+  - the workflow can be re-run manually (`workflow_dispatch`) on a tag, e.g.
+    to retry a failed publication.
 
-Both workflows rely on the default `GITHUB_TOKEN` only — no extra secrets are
-required (`packages: write` for GHCR, `contents: write` for the chart
-releases and the `gh-pages` branch).
+All workflows rely on the default `GITHUB_TOKEN` only — no extra secrets are
+required (`packages: write` for GHCR, `contents: write` for the release and
+the `gh-pages` branch).
 
 ### Cutting a release
 
@@ -225,10 +222,12 @@ git push origin vX.Y.Z
 The `release.yaml` workflow then:
 
 1. validates the tag (`vX.Y.Z`, optional prerelease suffix);
-2. creates a GitHub release on the `vX.Y.Z` tag with generated release notes
-   and links to the image and chart artifacts;
-3. sets the chart `version` and `appVersion` to `X.Y.Z` and publishes the
-   chart to GitHub Pages (`https://dotinfra.github.io/cert-manager-webhook-nameshield`);
+2. creates the single GitHub release on the `vX.Y.Z` tag with generated release
+   notes, links to the image and chart artifacts, and the packaged `.tgz`
+   attached;
+3. sets the chart `version` and `appVersion` to `X.Y.Z` and publishes the chart
+   to GitHub Pages (`index.yaml` and `.tgz` at the root of
+   `https://dotinfra.github.io/cert-manager-webhook-nameshield`);
 4. builds the image and pushes it to GHCR with the tags `X.Y.Z`, `X.Y`, `X`,
    `latest` (stable releases only) and `sha-<short-sha>`.
 
@@ -251,10 +250,11 @@ ships with an app release anyway.
   folder. The documentation site is then served at the branch root
   `https://dotinfra.github.io/cert-manager-webhook-nameshield/` (the Pages home
   page), and the chart repository at
-  `https://dotinfra.github.io/cert-manager-webhook-nameshield/index.yaml` (both
-  live on the same branch: the built MkDocs site at the root, `index.yaml`
-  alongside). The `gh-pages` branch itself is created automatically (as an empty
-  orphan branch) by the release workflow on the first chart publication.
+  `https://dotinfra.github.io/cert-manager-webhook-nameshield/index.yaml`, with
+  the `.tgz` chart archives at the root too (all live on the same branch: the
+  built MkDocs site and the chart repository files). The `gh-pages` branch
+  itself is created automatically (as an empty orphan branch) by the release
+  workflow on the first chart publication.
 - **GHCR package**: the first image push creates the
   `cert-manager-webhook-nameshield` package under the repository owner. Link
   it to this repository (*Packages → package settings → Connect repository*)

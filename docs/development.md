@@ -57,14 +57,14 @@ Three GitHub Actions workflows are defined in `.github/workflows/`:
   image build (load only, no push).
 - **`docs.yaml`** — builds the MkDocs site and publishes it to the root of
   `gh-pages`, as the Pages home page (see above).
-- **`release.yaml`** — runs on push of a `v*` tag only: validates the semver tag,
-  creates a GitHub release on the tag, builds and pushes the multi-arch image to
-  GHCR (`<version>`, `<major>.<minor>`, `<major>`, `latest` on stable releases,
-  `sha-<short-sha>`), sets the chart `version`/`appVersion` to the tag version
-  and publishes the chart to the `gh-pages` branch with
-  [helm/chart-releaser-action](https://github.com/helm/chart-releaser-action)
-  (`index.yaml` at the branch root, one GitHub release per chart version carrying
-  the `.tgz` asset).
+- **`release.yaml`** — runs on push of a `v*` tag only (one tag = one release, no
+  extra chart tags/releases): validates the semver tag, builds and pushes the
+  multi-arch image to GHCR (`<version>`, `<major>.<minor>`, `<major>`, `latest`
+  on stable releases, `sha-<short-sha>`), sets the chart `version`/`appVersion`
+  to the tag version, packages it with `helm package`, creates the single GitHub
+  release on the tag with the `.tgz` attached, and publishes the `.tgz` +
+  regenerated `index.yaml` to the `gh-pages` branch (chart repository at the root
+  of the Pages site, next to the documentation).
 
 All workflows rely on the default `GITHUB_TOKEN` only — no extra secrets are
 required.
@@ -87,7 +87,7 @@ select the `gh-pages` branch with the `/ (root)` folder. The site then serves,
 from the same branch:
 
 - the documentation at the root, `https://dotinfra.github.io/cert-manager-webhook-nameshield/` (home page);
-- the Helm chart repository at `https://dotinfra.github.io/cert-manager-webhook-nameshield/index.yaml`.
+- the Helm chart repository at `https://dotinfra.github.io/cert-manager-webhook-nameshield/index.yaml` (`.tgz` archives at the root).
 
 The `gh-pages` branch itself is created automatically (as an empty orphan
 branch) by the release workflow on the first chart publication.
