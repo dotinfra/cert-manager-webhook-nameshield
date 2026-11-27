@@ -32,6 +32,16 @@ type solverConfig struct {
 	// IncludeOtherUsersChanges makes the zone validation also apply pending
 	// changes made by other users or tokens. Defaults to false.
 	IncludeOtherUsersChanges bool `json:"includeOtherUsersChanges,omitempty"`
+
+	// AllowedDomains restricts the DNS names this solver acts on. When
+	// non-empty, a challenge is processed only if its DNS name equals or is
+	// a subdomain of one of the entries; other challenges fail fast.
+	AllowedDomains []string `json:"allowedDomains,omitempty"`
+
+	// ExcludedDomains lists DNS names this solver must never act on. A
+	// challenge whose DNS name equals or is a subdomain of an entry is
+	// rejected, even if it also matches AllowedDomains.
+	ExcludedDomains []string `json:"excludedDomains,omitempty"`
 }
 
 // secretKeySelector references a key of a Kubernetes Secret.

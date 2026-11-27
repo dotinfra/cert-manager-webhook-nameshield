@@ -16,6 +16,35 @@ The webhook solver configuration, set in the Issuer's `webhook.config` stanza:
 | `zoneName` | string | Optional. Forces the Nameshield zone to update, bypassing zone resolution and discovery. |
 | `ttl` | int | Optional. TTL of created TXT records. Provider default when unset. |
 | `includeOtherUsersChanges` | bool | Optional, default false. Set to true to also apply pending zone changes made by other users when validating. |
+| `allowedDomains` | list of strings | Optional. Allowlist of DNS names this solver acts on: when non-empty, a challenge is processed only if its DNS name equals or is a subdomain of one of the entries (e.g. `example.com` also covers `www.example.com` and `*.example.com`). Other challenges fail fast with an explicit error. |
+| `excludedDomains` | list of strings | Optional. Denylist of DNS names this solver must never act on, with the same matching rules (e.g. `www.example.com` also covers `api.www.example.com`). Exclusions win over `allowedDomains`. |
+
+### Domain filtering
+
+cert-manager does not filter DNS names itself: it creates one DNS-01 challenge
+per name listed in the Certificate's `spec.dnsNames` (plus `spec.commonName`
+when it is a DNS name) and calls the solver for each of them. To control which
+names are validated, edit the Certificate's `dnsNames`. Note that every name
+kept in the Certificate requires its own `_acme-challenge.<name>` TXT record,
+so a name cannot be skipped while still being part of the certificate.
+
+The `allowedDomains`/`excludedDomains` options are a guardrail on the webhook
+side, useful for cluster-wide Issuers: a challenge outside the allowlist (or in
+the denylist) is rejected before any Nameshield API call, and the challenge
+fails immediately with a clear error instead of creating records in a zone the
+Issuer was not meant to touch. Matching is case-insensitive, ignores trailing
+dots and wildcard prefixes, and treats an entry as covering its subdomains.
+
+```yaml
+config:
+  apiTokenSecretRef:
+    name: nameshield-token
+    key: token
+  allowedDomains:
+    - example.com        # covers example.com, *.example.com, www.example.com, ...
+  excludedDomains:
+    - www.example.com    # ... except www.example.com and its subdomains
+```
 
 ## Helm chart values
 

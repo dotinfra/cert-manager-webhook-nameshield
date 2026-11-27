@@ -43,6 +43,12 @@ The webhook solver configuration, set in the Issuer's `webhook.config` stanza:
 | `zoneName` | string | Optional. Forces the Nameshield zone to update, bypassing zone resolution and discovery. |
 | `ttl` | int | Optional. TTL of created TXT records. Provider default when unset. |
 | `includeOtherUsersChanges` | bool | Optional, default false. Set to true to also apply pending zone changes made by other users when validating. |
+| `allowedDomains` | list of strings | Optional. Allowlist of DNS names the solver acts on (an entry also covers its subdomains and wildcards, e.g. `example.com` covers `www.example.com`). Non-matching challenges fail fast before any API call. |
+| `excludedDomains` | list of strings | Optional. Denylist of DNS names the solver never acts on, same matching rules (e.g. `www.example.com`). Wins over `allowedDomains`. |
+
+Note: cert-manager challenges every name in the Certificate's `dnsNames`; use
+these options as a webhook-side guardrail, and the Certificate's `dnsNames` to
+choose which names are validated at all.
 
 ## Installation
 
