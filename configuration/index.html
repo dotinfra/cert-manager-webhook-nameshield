@@ -51,6 +51,10 @@
                 <li class="toctree-l1 current"><a class="reference internal current" href="#">Configuration</a>
     <ul class="current">
     <li class="toctree-l2"><a class="reference internal" href="#solver-configuration">Solver configuration</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#domain-filtering">Domain filtering</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#helm-chart-values">Helm chart values</a>
     </li>
@@ -129,8 +133,40 @@
 <td>bool</td>
 <td>Optional, default false. Set to true to also apply pending zone changes made by other users when validating.</td>
 </tr>
+<tr>
+<td><code>allowedDomains</code></td>
+<td>list of strings</td>
+<td>Optional. Allowlist of DNS names this solver acts on: when non-empty, a challenge is processed only if its DNS name equals or is a subdomain of one of the entries (e.g. <code>example.com</code> also covers <code>www.example.com</code> and <code>*.example.com</code>). Other challenges fail fast with an explicit error.</td>
+</tr>
+<tr>
+<td><code>excludedDomains</code></td>
+<td>list of strings</td>
+<td>Optional. Denylist of DNS names this solver must never act on, with the same matching rules (e.g. <code>www.example.com</code> also covers <code>api.www.example.com</code>). Exclusions win over <code>allowedDomains</code>.</td>
+</tr>
 </tbody>
 </table>
+<h3 id="domain-filtering">Domain filtering</h3>
+<p>cert-manager does not filter DNS names itself: it creates one DNS-01 challenge
+per name listed in the Certificate's <code>spec.dnsNames</code> (plus <code>spec.commonName</code>
+when it is a DNS name) and calls the solver for each of them. To control which
+names are validated, edit the Certificate's <code>dnsNames</code>. Note that every name
+kept in the Certificate requires its own <code>_acme-challenge.&lt;name&gt;</code> TXT record,
+so a name cannot be skipped while still being part of the certificate.</p>
+<p>The <code>allowedDomains</code>/<code>excludedDomains</code> options are a guardrail on the webhook
+side, useful for cluster-wide Issuers: a challenge outside the allowlist (or in
+the denylist) is rejected before any Nameshield API call, and the challenge
+fails immediately with a clear error instead of creating records in a zone the
+Issuer was not meant to touch. Matching is case-insensitive, ignores trailing
+dots and wildcard prefixes, and treats an entry as covering its subdomains.</p>
+<pre><code class="language-yaml">config:
+  apiTokenSecretRef:
+    name: nameshield-token
+    key: token
+  allowedDomains:
+    - example.com        # covers example.com, *.example.com, www.example.com, ...
+  excludedDomains:
+    - www.example.com    # ... except www.example.com and its subdomains
+</code></pre>
 <h2 id="helm-chart-values">Helm chart values</h2>
 <p>Defaults are in <code>deploy/cert-manager-webhook-nameshield/values.yaml</code>:</p>
 <table>
