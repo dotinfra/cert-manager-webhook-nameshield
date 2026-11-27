@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://dotinfra.github.io/cert-manager-webhook-nameshield/docs/installation/" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Installation - cert-manager-webhook-nameshield</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Installation";
+        var mkdocs_page_input_path = "installation.md";
+        var mkdocs_page_url = "/cert-manager-webhook-nameshield/docs/installation/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> cert-manager-webhook-nameshield
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Overview</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Installation</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#1-install-the-helm-chart">1. Install the Helm chart</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#2-create-the-api-token-secret">2. Create the API token Secret</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#3-reference-the-solver-in-an-issuer">3. Reference the solver in an Issuer</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#building-the-image-from-source">Building the image from source</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../configuration/">Configuration</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../development/">Development</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">cert-manager-webhook-nameshield</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Installation</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/dotinfra/cert-manager-webhook-nameshield/edit/master/docs/installation.md" class="icon icon-github"> Edit on GitHub</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="installation">Installation</h1>
+<p>Pre-built artifacts are published automatically by the CI (see <a href="../development/">Development</a>):</p>
+<ul>
+<li>container image on GitHub Container Registry:
+  <code>ghcr.io/dotinfra/cert-manager-webhook-nameshield</code> (tags <code>&lt;version&gt;</code>,
+  <code>&lt;major&gt;.&lt;minor&gt;</code>, <code>&lt;major&gt;</code>, <code>latest</code> on stable releases, and
+  <code>sha-&lt;short-sha&gt;</code>);</li>
+<li>Helm chart repository on GitHub Pages:
+  <code>https://dotinfra.github.io/cert-manager-webhook-nameshield</code>.</li>
+</ul>
+<h2 id="1-install-the-helm-chart">1. Install the Helm chart</h2>
+<pre><code class="language-sh">helm repo add cert-manager-webhook-nameshield https://dotinfra.github.io/cert-manager-webhook-nameshield
+helm repo update
+
+helm install cert-manager-webhook-nameshield cert-manager-webhook-nameshield/cert-manager-webhook-nameshield \
+  --namespace cert-manager \
+  --create-namespace \
+  --set groupName=cert-manager-webhook-nameshield
+</code></pre>
+<p>The chart defaults to the published image
+<code>ghcr.io/dotinfra/cert-manager-webhook-nameshield:&lt;appVersion&gt;</code>: the chart's
+<code>image.tag</code> defaults to <code>.Chart.AppVersion</code>, so a released chart always points
+at the Docker tag published for the same release. Override it with
+<code>--set image.tag=&lt;tag&gt;</code>. To install from a local checkout with a self-built
+image instead:</p>
+<pre><code class="language-sh">helm install cert-manager-webhook-nameshield deploy/cert-manager-webhook-nameshield \
+  --namespace cert-manager \
+  --set groupName=cert-manager-webhook-nameshield \
+  --set image.repository=&lt;your-registry&gt;/cert-manager-webhook-nameshield \
+  --set image.tag=&lt;tag&gt;
+</code></pre>
+<h2 id="2-create-the-api-token-secret">2. Create the API token Secret</h2>
+<p>The token must have DNS rights on the zones involved. For ClusterIssuers, the
+Secret must exist in the cert-manager cluster resource namespace (default
+<code>cert-manager</code>):</p>
+<pre><code class="language-sh">kubectl -n cert-manager create secret generic nameshield-api-token \
+  --from-literal=token=&lt;NAMESHIELD_TOKEN&gt;
+</code></pre>
+<p>The <code>groupName</code> value names the Kubernetes APIService group of the webhook.
+It must be unique in the cluster and stable once deployed.</p>
+<p>By default the chart installs a Role granting the webhook read access to
+Secrets in its own namespace only. If Issuers live in other namespaces and
+<code>apiTokenSecretRef</code> does not specify a namespace, set
+<code>rbac.allowClusterWideSecretAccess=true</code>.</p>
+<h2 id="3-reference-the-solver-in-an-issuer">3. Reference the solver in an Issuer</h2>
+<p>Create a <code>ClusterIssuer</code> (or <code>Issuer</code>) whose <code>dns01</code> stanza uses the <code>webhook</code>
+solver with the <code>groupName</code> configured above and the solver name <code>nameshield</code>:</p>
+<pre><code class="language-yaml">apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-nameshield
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: admin@example.com
+    privateKeySecretRef:
+      name: letsencrypt-account-key
+    solvers:
+      - dns01:
+          webhook:
+            groupName: cert-manager-webhook-nameshield
+            solverName: nameshield
+            config:
+              apiTokenSecretRef:
+                name: nameshield-api-token
+                key: token
+              # namespace: cert-manager  # rarely needed, see below
+              # zoneName: example.com    # optional: force the Nameshield zone
+              # apiUrl: https://ote-api.nameshield.net/dns/v4  # OTE environment
+              # ttl: 60                  # optional TXT record TTL
+</code></pre>
+<p>The <code>config</code> stanza accepts the fields documented in
+<a href="../configuration/">Configuration</a>. For a <code>ClusterIssuer</code>, cert-manager resolves
+<code>apiTokenSecretRef</code> in its own cluster resource namespace (<code>cert-manager</code> by
+default), so <code>namespace</code> can usually be omitted and the Secret created in
+step 2 is found as-is. Set <code>namespace</code> explicitly when it differs, or set
+<code>rbac.allowClusterWideSecretAccess=true</code> on the chart.</p>
+<p>Then request a certificate:</p>
+<pre><code class="language-yaml">apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: example-com
+  namespace: default
+spec:
+  secretName: example-com-tls
+  dnsNames:
+    - example.com
+    - www.example.com
+  issuerRef:
+    name: letsencrypt-nameshield
+    kind: ClusterIssuer
+</code></pre>
+<h2 id="building-the-image-from-source">Building the image from source</h2>
+<pre><code class="language-sh">make build-image IMAGE=ghcr.io/dotinfra/cert-manager-webhook-nameshield TAG=0.1.0
+make push-image  IMAGE=ghcr.io/dotinfra/cert-manager-webhook-nameshield TAG=0.1.0
+</code></pre>
+<p>then install the chart from the local checkout as shown above.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href=".." class="btn btn-neutral float-left" title="Overview"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../configuration/" class="btn btn-neutral float-right" title="Configuration">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/dotinfra/cert-manager-webhook-nameshield" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href=".." style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../configuration/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

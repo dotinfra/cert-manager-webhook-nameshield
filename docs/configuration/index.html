@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://dotinfra.github.io/cert-manager-webhook-nameshield/docs/configuration/" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Configuration - cert-manager-webhook-nameshield</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Configuration";
+        var mkdocs_page_input_path = "configuration.md";
+        var mkdocs_page_url = "/cert-manager-webhook-nameshield/docs/configuration/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> cert-manager-webhook-nameshield
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Overview</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../installation/">Installation</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Configuration</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#solver-configuration">Solver configuration</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#helm-chart-values">Helm chart values</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#limitations">Limitations</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../development/">Development</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">cert-manager-webhook-nameshield</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Configuration</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/dotinfra/cert-manager-webhook-nameshield/edit/master/docs/configuration.md" class="icon icon-github"> Edit on GitHub</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="configuration">Configuration</h1>
+<p>Two levels of configuration exist:</p>
+<ul>
+<li>the <strong>solver configuration</strong>, set per-Issuer in the <code>webhook.config</code> stanza;</li>
+<li>the <strong>Helm chart values</strong>, set at install/upgrade time.</li>
+</ul>
+<h2 id="solver-configuration">Solver configuration</h2>
+<p>The webhook solver configuration, set in the Issuer's <code>webhook.config</code> stanza:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>apiUrl</code></td>
+<td>string</td>
+<td>Nameshield DNS API base URL. Default: <code>https://api.nameshield.net/dns/v4</code>. Use <code>https://ote-api.nameshield.net/dns/v4</code> for the OTE environment.</td>
+</tr>
+<tr>
+<td><code>apiTokenSecretRef</code></td>
+<td>object</td>
+<td>Required. <code>name</code> and <code>key</code> of the Secret holding the API token. Optional <code>namespace</code>; defaults to the challenge namespace (the cert-manager namespace for ClusterIssuers).</td>
+</tr>
+<tr>
+<td><code>zoneName</code></td>
+<td>string</td>
+<td>Optional. Forces the Nameshield zone to update, bypassing zone resolution and discovery.</td>
+</tr>
+<tr>
+<td><code>ttl</code></td>
+<td>int</td>
+<td>Optional. TTL of created TXT records. Provider default when unset.</td>
+</tr>
+<tr>
+<td><code>includeOtherUsersChanges</code></td>
+<td>bool</td>
+<td>Optional, default false. Set to true to also apply pending zone changes made by other users when validating.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="helm-chart-values">Helm chart values</h2>
+<p>Defaults are in <code>deploy/cert-manager-webhook-nameshield/values.yaml</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>groupName</code></td>
+<td><code>cert-manager-webhook-nameshield</code></td>
+<td>Kubernetes APIService group of the webhook. Referenced by the chart's APIService and by each Issuer's <code>groupName</code> field. Must be unique in the cluster and stable once deployed.</td>
+</tr>
+<tr>
+<td><code>certManager.namespace</code></td>
+<td><code>cert-manager</code></td>
+<td>Namespace of the cert-manager controller.</td>
+</tr>
+<tr>
+<td><code>certManager.serviceAccountName</code></td>
+<td><code>cert-manager</code></td>
+<td>ServiceAccount of the cert-manager controller.</td>
+</tr>
+<tr>
+<td><code>image.repository</code></td>
+<td><code>ghcr.io/dotinfra/cert-manager-webhook-nameshield</code></td>
+<td>Webhook container image repository.</td>
+</tr>
+<tr>
+<td><code>image.tag</code></td>
+<td><code>""</code> (falls back to <code>.Chart.AppVersion</code>)</td>
+<td>Webhook container image tag. A released chart points at the Docker tag of the same release.</td>
+</tr>
+<tr>
+<td><code>image.pullPolicy</code></td>
+<td><code>IfNotPresent</code></td>
+<td>Image pull policy.</td>
+</tr>
+<tr>
+<td><code>nameOverride</code> / <code>fullnameOverride</code></td>
+<td><code>""</code></td>
+<td>Standard Helm name overrides.</td>
+</tr>
+<tr>
+<td><code>replicaCount</code></td>
+<td><code>1</code></td>
+<td>Number of webhook replicas.</td>
+</tr>
+<tr>
+<td><code>service.type</code> / <code>service.port</code></td>
+<td><code>ClusterIP</code> / <code>443</code></td>
+<td>Webhook Service type and port.</td>
+</tr>
+<tr>
+<td><code>rbac.allowClusterWideSecretAccess</code></td>
+<td><code>false</code></td>
+<td>Install a ClusterRole granting the webhook read access to Secrets cluster-wide, for Issuers in other namespaces without an explicit <code>apiTokenSecretRef.namespace</code>.</td>
+</tr>
+<tr>
+<td><code>resources</code></td>
+<td><code>{}</code></td>
+<td>Container resource requests/limits.</td>
+</tr>
+<tr>
+<td><code>nodeSelector</code> / <code>tolerations</code> / <code>affinity</code></td>
+<td><code>{}</code></td>
+<td>Standard pod scheduling knobs.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="limitations">Limitations</h2>
+<ul>
+<li>A single API token is used for all zones managed by the webhook.</li>
+<li>Zone discovery probes successive parent names; with many unrelated zones per
+  token, set <code>zoneName</code> explicitly in each solver config.</li>
+<li>The <code>ns</code> records at the zone apex are never touched by this webhook; all
+  changes concern <code>_acme-challenge</code> TXT records and the zone validation endpoint.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../installation/" class="btn btn-neutral float-left" title="Installation"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../development/" class="btn btn-neutral float-right" title="Development">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/dotinfra/cert-manager-webhook-nameshield" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../installation/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../development/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
