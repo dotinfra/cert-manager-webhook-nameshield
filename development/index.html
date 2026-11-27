@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://dotinfra.github.io/cert-manager-webhook-nameshield/docs/development/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://dotinfra.github.io/cert-manager-webhook-nameshield/development/" />
       <link rel="shortcut icon" href="../img/favicon.ico" />
     <title>Development - cert-manager-webhook-nameshield</title>
     <link rel="stylesheet" href="../css/theme.css" />
@@ -14,7 +14,7 @@
         // Current page data
         var mkdocs_page_name = "Development";
         var mkdocs_page_input_path = "development.md";
-        var mkdocs_page_url = "/cert-manager-webhook-nameshield/docs/development/";
+        var mkdocs_page_url = "/cert-manager-webhook-nameshield/development/";
       </script>
     
     <!--[if lt IE 9]>
@@ -121,9 +121,9 @@ folder (<code>mkdocs.yml</code> at the repository root). To preview it locally:<
 mkdocs serve
 </code></pre>
 <p>The <code>docs.yaml</code> workflow builds the site on every push/PR touching <code>docs/</code>,
-<code>mkdocs.yml</code> or the workflow, and publishes it on <code>main</code> to the <code>docs/</code> folder
-of the <code>gh-pages</code> branch — the same branch (and the same GitHub Pages site)
-that serves the Helm chart repository from its root.</p>
+<code>mkdocs.yml</code> or the workflow, and publishes it on <code>main</code> to the root of the
+<code>gh-pages</code> branch, so the documentation is the GitHub Pages home page. The Helm
+chart repository (<code>index.yaml</code>) is preserved at the same root.</p>
 <h2 id="ci-and-releases">CI and releases</h2>
 <p>Three GitHub Actions workflows are defined in <code>.github/workflows/</code>:</p>
 <ul>
@@ -131,8 +131,8 @@ that serves the Helm chart repository from its root.</p>
   <code>gofmt</code> check, <code>go vet ./...</code>, unit tests (<code>go test ./nameshield/...</code>), <code>helm lint</code>
   and <code>helm template</code> on <code>deploy/cert-manager-webhook-nameshield</code>, and a Docker
   image build (load only, no push).</li>
-<li><strong><code>docs.yaml</code></strong> — builds the MkDocs site and publishes it to <code>gh-pages</code> under
-  <code>docs/</code> (see above).</li>
+<li><strong><code>docs.yaml</code></strong> — builds the MkDocs site and publishes it to the root of
+  <code>gh-pages</code>, as the Pages home page (see above).</li>
 <li><strong><code>release.yaml</code></strong> — runs on push of a <code>v*</code> tag only: validates the semver tag,
   creates a GitHub release on the tag, builds and pushes the multi-arch image to
   GHCR (<code>&lt;version&gt;</code>, <code>&lt;major&gt;.&lt;minor&gt;</code>, <code>&lt;major&gt;</code>, <code>latest</code> on stable releases,
@@ -156,8 +156,8 @@ chart <code>version</code>/<code>appVersion</code> <code>X.Y.Z</code>, and the c
 select the <code>gh-pages</code> branch with the <code>/ (root)</code> folder. The site then serves,
 from the same branch:</p>
 <ul>
-<li>the Helm chart repository at <code>https://dotinfra.github.io/cert-manager-webhook-nameshield/index.yaml</code>;</li>
-<li>the documentation at <code>https://dotinfra.github.io/cert-manager-webhook-nameshield/docs/</code>.</li>
+<li>the documentation at the root, <code>https://dotinfra.github.io/cert-manager-webhook-nameshield/</code> (home page);</li>
+<li>the Helm chart repository at <code>https://dotinfra.github.io/cert-manager-webhook-nameshield/index.yaml</code>.</li>
 </ul>
 <p>The <code>gh-pages</code> branch itself is created automatically (as an empty orphan
 branch) by the release workflow on the first chart publication.</p>

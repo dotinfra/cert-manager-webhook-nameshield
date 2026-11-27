@@ -1,21 +1,184 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>cert-manager-webhook-nameshield</title>
-  <style>
-    body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; max-width: 44rem; margin: 3rem auto; padding: 0 1rem; line-height: 1.5; color: #24292f; }
-    code { background: #f6f8fa; padding: 0.15rem 0.35rem; border-radius: 4px; }
-  </style>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="description" content="cert-manager ACME DNS-01 solver webhook for the Nameshield DNS API" /><link rel="canonical" href="https://dotinfra.github.io/cert-manager-webhook-nameshield/" />
+      <link rel="shortcut icon" href="img/favicon.ico" />
+    <title>cert-manager-webhook-nameshield</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Overview";
+        var mkdocs_page_input_path = "index.md";
+        var mkdocs_page_url = "/cert-manager-webhook-nameshield/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
 </head>
-<body>
-  <h1>cert-manager-webhook-nameshield</h1>
-  <p>A cert-manager ACME DNS-01 solver webhook for the Nameshield DNS API.</p>
-  <ul>
-    <li><a href="docs/">Documentation</a></li>
-    <li>Helm chart repository: <code>helm repo add cert-manager-webhook-nameshield https://dotinfra.github.io/cert-manager-webhook-nameshield</code> (<a href="index.yaml">index.yaml</a>)</li>
-    <li><a href="https://github.com/dotinfra/cert-manager-webhook-nameshield">Source repository</a></li>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="." class="icon icon-home"> cert-manager-webhook-nameshield
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Overview</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#how-it-works">How it works</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#nameshield-api-specifics-handled-by-the-webhook">Nameshield API specifics handled by the webhook</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#published-artifacts">Published artifacts</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#next-steps">Next steps</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="installation/">Installation</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="configuration/">Configuration</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="development/">Development</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href=".">cert-manager-webhook-nameshield</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Overview</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/dotinfra/cert-manager-webhook-nameshield/edit/master/docs/index.md" class="icon icon-github"> Edit on GitHub</a>
+    </li>
   </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="cert-manager-webhook-nameshield">cert-manager-webhook-nameshield</h1>
+<p>A cert-manager ACME DNS01 solver webhook for the <a href="https://docs.nameshield.net/">Nameshield DNS API</a>.
+It lets cert-manager complete Let's Encrypt (or any ACME) <code>dns-01</code> challenges by
+creating and deleting <code>_acme-challenge</code> TXT records in zones managed by Nameshield.</p>
+<p>Based on <a href="https://github.com/cert-manager/webhook-example">cert-manager/webhook-example</a>.</p>
+<h2 id="how-it-works">How it works</h2>
+<p>For each challenge, cert-manager sends a <code>ChallengeRequest</code> to the webhook, which:</p>
+<ol>
+<li>Resolves the Nameshield API token:</li>
+<li>from the Kubernetes Secret referenced by <code>apiTokenSecretRef</code>, or</li>
+<li>from the <code>NAMESHIELD_TOKEN</code> environment variable when ambient credentials are allowed (test suite).</li>
+<li>Determines the Nameshield zone:</li>
+<li>explicit <code>zoneName</code> from the solver configuration if set;</li>
+<li>otherwise the zone resolved by cert-manager (<code>resolvedZone</code>), when it exists in the account;</li>
+<li>otherwise discovery by probing parent names, most specific first.</li>
+<li><code>Present</code>: creates the TXT record (idempotent), then calls the zone validation
+   endpoint, because the Nameshield API keeps changes pending until validated.</li>
+<li><code>CleanUp</code>: finds the TXT record by name and value, deletes it, then validates the zone again.</li>
+</ol>
+<h2 id="nameshield-api-specifics-handled-by-the-webhook">Nameshield API specifics handled by the webhook</h2>
+<ul>
+<li>Authentication: <code>Authorization: Bearer &lt;token&gt;</code>.</li>
+<li>TXT record data must be wrapped in double quotes.</li>
+<li>Changes are only applied after <code>POST /zones/{zone}/validate</code>.</li>
+<li>Rate limit of 600 requests per 5 minutes per token, with <code>Retry-After</code> handling and retry on 429/5xx.</li>
+<li>Record deletion requires the record ID, obtained by listing records.</li>
+</ul>
+<h2 id="published-artifacts">Published artifacts</h2>
+<ul>
+<li>Container image on GitHub Container Registry: <code>ghcr.io/dotinfra/cert-manager-webhook-nameshield</code>.</li>
+<li>Helm chart repository on GitHub Pages, served from the root of this same site:
+  <code>https://dotinfra.github.io/cert-manager-webhook-nameshield</code> (<code>index.yaml</code>).</li>
+</ul>
+<h2 id="next-steps">Next steps</h2>
+<ul>
+<li><a href="installation/">Installation</a></li>
+<li><a href="configuration/">Configuration</a></li>
+<li><a href="development/">Development</a></li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="installation/" class="btn btn-neutral float-right" title="Installation">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/dotinfra/cert-manager-webhook-nameshield" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+    
+      <span><a href="installation/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = ".";</script>
+    <script src="js/theme_extra.js"></script>
+    <script src="js/theme.js"></script>
+      <script src="search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
 </body>
 </html>
+
+<!--
+MkDocs version : 1.6.1
+Build Date UTC : 2026-11-27 10:42:01.234959+00:00
+-->
