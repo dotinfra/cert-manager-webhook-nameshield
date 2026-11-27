@@ -16,6 +16,7 @@ concurrency:
 env:
   CHART_DIR: deploy/cert-manager-webhook-nameshield
   IMAGE: ghcr.io/${{ github.repository }}
+  CHART_REPO_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
 
 jobs:
   validate:
@@ -32,26 +33,6 @@ jobs:
             exit 1
           fi
           echo "version=${version}" >> "${GITHUB_OUTPUT}"
-
-  github-release:
-    name: Create GitHub release on the tag
-    needs: validate
-    runs-on: ubuntu-latest
-    steps:
-      - uses: softprops/action-gh-release@v3.0.4
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
-          generate_release_notes: true
-          draft: false
-          prerelease: ${{ contains(github.ref_name, '-') }}
-          body: |
-            ## Artifacts
-
-            - **Container image**: `ghcr.io/${{ github.repository }}:${{ needs.validate.outputs.version }}` — [GHCR package](https://github.com/${{ github.repository }}/pkgs/container/${{ github.event.repository.name }})
-            - **Helm chart**: `https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}` — [chart release `cert-manager-webhook-nameshield-${{ needs.validate.outputs.version }}`](https://github.com/${{ github.repository }}/releases/tag/cert-manager-webhook-nameshield-${{ needs.validate.outputs.version }})
-
-            Chart `version`/`appVersion` and default `image.tag` for this release: `${{ needs.validate.outputs.version }}`.
 
   docker:
     name: Build and push image to GHCR
@@ -94,8 +75,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  helm-chart:
-    name: Publish Helm chart
+  release:
+    name: Package chart, create the release and publish the chart repo
     needs: validate
     runs-on: ubuntu-latest
     steps:
@@ -103,10 +84,38 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: azure/setup-helm@v5.1.0
+
       - name: Configure git
         run: |
           git config user.name "${GITHUB_ACTOR}"
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+
+      - name: Set chart version and appVersion from the git tag
+        run: |
+          version="${{ needs.validate.outputs.version }}"
+          sed -i -E "s/^version:.*/version: ${version}/; s/^appVersion:.*/appVersion: \"${version}\"/" "${CHART_DIR}/Chart.yaml"
+          grep -E '^(version|appVersion):' "${CHART_DIR}/Chart.yaml"
+
+      - name: Package chart
+        run: helm package "${CHART_DIR}" --destination _out
+
+      - name: Create the GitHub release on the tag (chart archive attached)
+        uses: softprops/action-gh-release@v3.0.4
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          files: _out/*.tgz
+          body: |
+            ## Artifacts
+
+            - **Container image**: `ghcr.io/${{ github.repository }}:${{ needs.validate.outputs.version }}` — [GHCR package](https://github.com/${{ github.repository }}/pkgs/container/${{ github.event.repository.name }})
+            - **Helm chart**: `.tgz` attached to this release, and published to the GitHub Pages chart repository at `${{ env.CHART_REPO_URL }}` (`index.yaml` at the root of the site)
+
+            Chart `version`/`appVersion` and default `image.tag` for this release: `${{ needs.validate.outputs.version }}`.
 
       - name: Ensure gh-pages publishing branch exists
         run: |
@@ -116,20 +125,28 @@ jobs:
             tree=$(git mktree < /dev/null)
             commit=$(git commit-tree "$tree" -m "chore: initialize gh-pages publishing branch")
             git push origin "$commit:refs/heads/gh-pages"
-            git fetch origin gh-pages:refs/remotes/origin/gh-pages
             echo "gh-pages branch created"
           fi
 
-      - name: Set chart version and appVersion from the git tag
+      - name: Publish chart archive and index.yaml to the gh-pages branch
         run: |
-          version="${{ needs.validate.outputs.version }}"
-          sed -i -E "s/^version:.*/version: ${version}/; s/^appVersion:.*/appVersion: \"${version}\"/" "${CHART_DIR}/Chart.yaml"
-          grep -E '^(version|appVersion):' "${CHART_DIR}/Chart.yaml"
-
-      - uses: helm/chart-releaser-action@v1.9.0
-        with:
-          charts_dir: deploy
-          charts: ${{ env.CHART_DIR }}
-          skip_existing: "true"
-        env:
-          CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          git fetch origin gh-pages
+          git worktree add --detach .gh-pages FETCH_HEAD
+          cd .gh-pages
+          # Only the chart repository files are managed here: the .tgz archive
+          # and index.yaml. The documentation site published at the branch root
+          # by docs.yaml is left untouched (docs.yaml preserves index.yaml and
+          # *.tgz, and this job never deletes files).
+          cp ../_out/*.tgz .
+          helm repo index . --url "${CHART_REPO_URL}"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Chart repository already up to date on gh-pages"
+          else
+            git commit -m "chore: publish chart ${{ needs.validate.outputs.version }}"
+            git push origin HEAD:refs/heads/gh-pages || {
+              git fetch origin gh-pages
+              git rebase origin/gh-pages
+              git push origin HEAD:refs/heads/gh-pages
+            }
+          fi
