@@ -6,7 +6,7 @@ creating and deleting `_acme-challenge` TXT records in zones managed by Nameshie
 
 Based on [cert-manager/webhook-example](https://github.com/cert-manager/webhook-example).
 
-Documentation: [dotinfra.github.io/cert-manager-webhook-nameshield/docs/](https://dotinfra.github.io/cert-manager-webhook-nameshield/docs/) —
+Documentation: [dotinfra.github.io/cert-manager-webhook-nameshield](https://dotinfra.github.io/cert-manager-webhook-nameshield) —
 published on GitHub Pages from the same `gh-pages` branch that serves the Helm chart repository.
 
 ## How it works
@@ -176,9 +176,9 @@ Three GitHub Actions workflows are defined in `.github/workflows/`:
 
 - **`docs.yaml`** — builds the MkDocs site from `docs/` (`mkdocs.yml`) on every
   push/PR touching `docs/`, `mkdocs.yml` or the workflow itself, and publishes it
-  on `main` to the `docs/` folder of the `gh-pages` branch, alongside the Helm
-  chart repository served from the branch root
-  (`https://dotinfra.github.io/cert-manager-webhook-nameshield/docs/`);
+  on `main` to the root of the `gh-pages` branch, so it is the Pages home page,
+  alongside the Helm chart repository (`index.yaml`) served from the same root
+  (`https://dotinfra.github.io/cert-manager-webhook-nameshield/`);
 - **`ci.yaml`** — runs on every push and pull request on `main`:
   - `gofmt` check, `go vet ./...` and unit tests (`go test ./nameshield/...`;
     the cert-manager DNS01 conformance suite in the root package needs the
@@ -248,12 +248,12 @@ ships with an app release anyway.
 
 - **GitHub Pages**: in *Settings → Pages*, set *Build and deployment* to
   *Deploy from a branch*, then select the `gh-pages` branch with the `/ (root)`
-  folder. The chart repository is then served at
-  `https://dotinfra.github.io/cert-manager-webhook-nameshield/index.yaml`, and
-  the documentation site at
-  `https://dotinfra.github.io/cert-manager-webhook-nameshield/docs/` (both live
-  on the same branch: `index.yaml` at the root, the built MkDocs site under
-  `docs/`). The `gh-pages` branch itself is created automatically (as an empty
+  folder. The documentation site is then served at the branch root
+  `https://dotinfra.github.io/cert-manager-webhook-nameshield/` (the Pages home
+  page), and the chart repository at
+  `https://dotinfra.github.io/cert-manager-webhook-nameshield/index.yaml` (both
+  live on the same branch: the built MkDocs site at the root, `index.yaml`
+  alongside). The `gh-pages` branch itself is created automatically (as an empty
   orphan branch) by the release workflow on the first chart publication.
 - **GHCR package**: the first image push creates the
   `cert-manager-webhook-nameshield` package under the repository owner. Link

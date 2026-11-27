@@ -32,8 +32,8 @@ For each challenge, cert-manager sends a `ChallengeRequest` to the webhook, whic
 ## Published artifacts
 
 - Container image on GitHub Container Registry: `ghcr.io/dotinfra/cert-manager-webhook-nameshield`.
-- Helm chart repository on GitHub Pages, served from the root of this site:
-  `https://dotinfra.github.io/cert-manager-webhook-nameshield`.
+- Helm chart repository on GitHub Pages, served from the root of this same site:
+  `https://dotinfra.github.io/cert-manager-webhook-nameshield` (`index.yaml`).
 
 ## Next steps
 

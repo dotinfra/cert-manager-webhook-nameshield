@@ -43,9 +43,9 @@ mkdocs serve
 ```
 
 The `docs.yaml` workflow builds the site on every push/PR touching `docs/`,
-`mkdocs.yml` or the workflow, and publishes it on `main` to the `docs/` folder
-of the `gh-pages` branch — the same branch (and the same GitHub Pages site)
-that serves the Helm chart repository from its root.
+`mkdocs.yml` or the workflow, and publishes it on `main` to the root of the
+`gh-pages` branch, so the documentation is the GitHub Pages home page. The Helm
+chart repository (`index.yaml`) is preserved at the same root.
 
 ## CI and releases
 
@@ -55,8 +55,8 @@ Three GitHub Actions workflows are defined in `.github/workflows/`:
   `gofmt` check, `go vet ./...`, unit tests (`go test ./nameshield/...`), `helm lint`
   and `helm template` on `deploy/cert-manager-webhook-nameshield`, and a Docker
   image build (load only, no push).
-- **`docs.yaml`** — builds the MkDocs site and publishes it to `gh-pages` under
-  `docs/` (see above).
+- **`docs.yaml`** — builds the MkDocs site and publishes it to the root of
+  `gh-pages`, as the Pages home page (see above).
 - **`release.yaml`** — runs on push of a `v*` tag only: validates the semver tag,
   creates a GitHub release on the tag, builds and pushes the multi-arch image to
   GHCR (`<version>`, `<major>.<minor>`, `<major>`, `latest` on stable releases,
@@ -86,8 +86,8 @@ In *Settings → Pages*, set *Build and deployment* to *Deploy from a branch* an
 select the `gh-pages` branch with the `/ (root)` folder. The site then serves,
 from the same branch:
 
-- the Helm chart repository at `https://dotinfra.github.io/cert-manager-webhook-nameshield/index.yaml`;
-- the documentation at `https://dotinfra.github.io/cert-manager-webhook-nameshield/docs/`.
+- the documentation at the root, `https://dotinfra.github.io/cert-manager-webhook-nameshield/` (home page);
+- the Helm chart repository at `https://dotinfra.github.io/cert-manager-webhook-nameshield/index.yaml`.
 
 The `gh-pages` branch itself is created automatically (as an empty orphan
 branch) by the release workflow on the first chart publication.
