@@ -2,8 +2,17 @@ apiVersion: v1
 entries:
   cert-manager-webhook-nameshield:
   - apiVersion: v2
+    appVersion: 0.2.0
+    created: "2026-11-27T15:29:55.656305521Z"
+    description: A Helm chart for the Nameshield cert-manager ACME DNS01 webhook
+    digest: 273ad47109d553a5b2f81a089ef2dcf228cfe1849ffff63277b5b737defd3d4e
+    name: cert-manager-webhook-nameshield
+    urls:
+    - https://dotinfra.github.io/cert-manager-webhook-nameshield/cert-manager-webhook-nameshield-0.2.0.tgz
+    version: 0.2.0
+  - apiVersion: v2
     appVersion: 0.1.2
-    created: "2026-11-27T11:22:31.671410986Z"
+    created: "2026-11-27T15:29:55.65603624Z"
     description: A Helm chart for the Nameshield cert-manager ACME DNS01 webhook
     digest: 17620c0c9bc99251255a76decbe668fb2f620b7298e1f8246f05a09c8fbe378d
     name: cert-manager-webhook-nameshield
@@ -12,11 +21,11 @@ entries:
     version: 0.1.2
   - apiVersion: v2
     appVersion: 0.1.1
-    created: "2026-11-27T11:22:31.670688308Z"
+    created: "2026-11-27T15:29:55.655748155Z"
     description: A Helm chart for the Nameshield cert-manager ACME DNS01 webhook
     digest: 15ab6d317013cbbb5ac3e0e2957c05fc4a6ffd9116ed00fa57af80ba16bc982c
     name: cert-manager-webhook-nameshield
     urls:
     - https://dotinfra.github.io/cert-manager-webhook-nameshield/cert-manager-webhook-nameshield-0.1.1.tgz
     version: 0.1.1
-generated: "2026-11-27T11:22:31.669230735Z"
+generated: "2026-11-27T15:29:55.655250555Z"
