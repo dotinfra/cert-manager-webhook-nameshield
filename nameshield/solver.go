@@ -53,6 +53,10 @@ func (s *Solver) Present(ch *acme.ChallengeRequest) error {
 		return err
 	}
 
+	if err := checkDomainFilter(cfg, ch); err != nil {
+		return err
+	}
+
 	ctx := context.Background()
 
 	token, err := s.resolveToken(ctx, ch, cfg)
@@ -104,6 +108,11 @@ func (s *Solver) CleanUp(ch *acme.ChallengeRequest) error {
 		return err
 	}
 
+	if err := checkDomainFilter(cfg, ch); err != nil {
+		// Filtered challenges never created a record; nothing to clean up.
+		return nil
+	}
+
 	ctx := context.Background()
 
 	token, err := s.resolveToken(ctx, ch, cfg)
@@ -149,6 +158,53 @@ func (s *Solver) CleanUp(ch *acme.ChallengeRequest) error {
 	}
 
 	return nil
+}
+
+// checkDomainFilter enforces the allowedDomains/excludedDomains solver
+// config. It returns an error when the challenge's DNS name must not be
+// handled by this solver.
+func checkDomainFilter(cfg solverConfig, ch *acme.ChallengeRequest) error {
+	name := challengeDNSName(ch)
+	if domainMatchesAny(name, cfg.ExcludedDomains) {
+		return fmt.Errorf("nameshield: dnsName %q is excluded by the solver config (excludedDomains)", name)
+	}
+	if len(cfg.AllowedDomains) > 0 && !domainMatchesAny(name, cfg.AllowedDomains) {
+		return fmt.Errorf("nameshield: dnsName %q is not allowed by the solver config (allowedDomains)", name)
+	}
+	return nil
+}
+
+// challengeDNSName returns the DNS name being validated: ch.DNSName when
+// set, otherwise the ResolvedFQDN stripped of its _acme-challenge prefix.
+func challengeDNSName(ch *acme.ChallengeRequest) string {
+	if name := normalizeDomain(ch.DNSName); name != "" {
+		return name
+	}
+	return strings.TrimPrefix(normalizeDomain(ch.ResolvedFQDN), "_acme-challenge.")
+}
+
+// normalizeDomain lowercases a domain name, strips a leading wildcard label
+// and a trailing dot so config entries and challenge names compare
+// consistently.
+func normalizeDomain(name string) string {
+	name = strings.ToLower(strings.TrimSpace(name))
+	name = strings.TrimSuffix(name, ".")
+	return strings.TrimPrefix(name, "*.")
+}
+
+// domainMatchesAny reports whether name equals an entry or is a subdomain of
+// it, e.g. "www.example.com" matches entry "example.com".
+func domainMatchesAny(name string, entries []string) bool {
+	for _, entry := range entries {
+		entry = normalizeDomain(entry)
+		if entry == "" {
+			continue
+		}
+		if name == entry || strings.HasSuffix(name, "."+entry) {
+			return true
+		}
+	}
+	return false
 }
 
 // resolveToken returns the Nameshield API token, from the Secret referenced
